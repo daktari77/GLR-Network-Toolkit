@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# App-generated files
+config/settings.json
+alerts.log
+exports/
+
+# Scratch files
+Nuovo Documento di testo.txt
+package-lock.json
+
+# Other projects in the same folder
+ping-monitor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Claude Code internals
+.claude/

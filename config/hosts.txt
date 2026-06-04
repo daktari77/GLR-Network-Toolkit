@@ -1,0 +1,18 @@
+# GLR-ParallelPingInfo - host list
+# Format:
+#   <hostname_or_ip>                    -> ICMP ping
+#   <hostname_or_ip> TCP <port>         -> TCP port check
+#   <hostname_or_ip> HTTP [port]        -> HTTP check  (http://)
+#   <hostname_or_ip> HTTPS [port]       -> HTTPS check (https://)
+#   <cidr>                              -> ICMP on all subnet hosts  (e.g. 192.168.1.0/24)
+#   <start>-<end>                       -> ICMP on IP range          (e.g. 10.0.0.1-50)
+#   <cidr> TCP <port>                   -> TCP on all subnet hosts
+#   <start>-<end> TCP <port>            -> TCP on all range hosts
+#
+google.com
+8.8.8.8
+192.168.1.1
+github.com TCP 443
+google.com HTTPS
+# 192.168.1.0/24
+# 10.0.0.1-20
