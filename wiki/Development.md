@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/daktari77/GLR-Network-Toolkit
+git clone https://github.com/daktari77/-GLR-NetScope
 cd GLR-Network-Toolkit
 pip install -r requirements.txt
 python main.py
