@@ -1,8 +1,16 @@
 import json
+import sys
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
-_FILE = Path("config/settings.json")
+
+def _base_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).parent
+    return Path(__file__).parent.parent
+
+
+_FILE = _base_dir() / "config" / "settings.json"
 
 
 @dataclass
@@ -17,6 +25,7 @@ class AppSettings:
     smtp_password: str = ""
     smtp_from: str = ""
     smtp_to: list[str] = field(default_factory=list)
+    theme: str = "dark"
 
 
 def load() -> AppSettings:

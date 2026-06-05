@@ -22,9 +22,17 @@ class IcmpProber(AbstractProber):
                 capture_output=True,
                 text=True,
                 timeout=self.timeout_ms / 1000 + 3,
+                creationflags=subprocess.CREATE_NO_WINDOW,
             )
 
             if proc.returncode == 0:
+                # On Windows, ICMP "Host Unreachable" (router replies on behalf
+                # of a dead host) also returns exit code 0.  A genuine echo
+                # reply ALWAYS includes "TTL=" in the per-packet output line;
+                # an unreachable message never does.
+                if platform.system() == "Windows" and "TTL=" not in proc.stdout.upper():
+                    return ProbeResult(host=entry.host, probe_type=ProbeType.ICMP,
+                                       status=HostStatus.DOWN, error="unreachable")
                 latency = _parse_latency(proc.stdout)
                 return ProbeResult(host=entry.host, probe_type=ProbeType.ICMP,
                                    status=HostStatus.UP, latency_ms=latency)
@@ -40,10 +48,12 @@ class IcmpProber(AbstractProber):
 
 
 def _parse_latency(output: str) -> float | None:
-    # Windows: "Average = 12ms"
-    m = re.search(r"Average\s*=\s*(\d+)ms", output)
-    if m:
-        return float(m.group(1))
+    # Windows — all locales: the last "= Nms" or "< Nms" in the output is
+    # always the average/media from the statistics line (EN "Average", IT "Media", etc.).
+    # TTL values like "TTL=128" are excluded because they have no "ms" suffix.
+    all_ms = re.findall(r"[=<]\s*(\d+)\s*ms", output, re.IGNORECASE)
+    if all_ms:
+        return float(all_ms[-1])
     # Linux/macOS: "min/avg/max/mdev = 1.2/2.3/3.4/0.5 ms"
     m = re.search(r"min/avg/max.*?=\s*[\d.]+/([\d.]+)/", output)
     if m:

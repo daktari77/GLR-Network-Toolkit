@@ -1,0 +1,34 @@
+{
+  "collapse-filter": false,
+  "search": "",
+  "showTags": true,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "tag:#architettura",
+      "color": { "a": 1, "rgb": 4358709 }
+    },
+    {
+      "query": "tag:#configurazione",
+      "color": { "a": 1, "rgb": 14515966 }
+    },
+    {
+      "query": "tag:#sviluppo",
+      "color": { "a": 1, "rgb": 9764856 }
+    }
+  ],
+  "collapse-display": false,
+  "showArrow": true,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.2,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": false,
+  "centerStrength": 0.518713248970312,
+  "repelStrength": 10,
+  "linkStrength": 1,
+  "linkDistance": 250,
+  "scale": 1
+}

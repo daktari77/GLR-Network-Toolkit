@@ -34,6 +34,75 @@ class ProbeResult:
     timestamp: datetime = field(default_factory=datetime.now)
 
 
+@dataclass
+class ScanResult:
+    ip: str
+    hostname: str = ""
+    mac: str = ""
+    vendor: str = ""
+    latency_ms: float | None = None
+    is_alive: bool = False
+
+
+@dataclass
+class PortScanResult:
+    ip: str
+    port: int
+    state: str = "closed"
+    service: str = ""
+    banner: str = ""
+
+
+@dataclass
+class TraceHop:
+    hop: int
+    ip: str
+    hostname: str = ""
+    rtt_ms: float | None = None
+
+
+@dataclass
+class DnsResult:
+    query: str
+    a_records: list = field(default_factory=list)
+    ptr_record: str = ""
+    mx_records: list = field(default_factory=list)
+    cname_record: str = ""
+    error: str = ""
+
+
+@dataclass
+class SslResult:
+    host: str
+    subject: str = ""
+    issuer: str = ""
+    expiry: str = ""
+    days_remaining: int = 0
+    cipher: str = ""
+    valid: bool = False
+    error: str = ""
+
+
+@dataclass
+class HttpInspectResult:
+    url: str
+    status_code: int = 0
+    response_time_ms: float = 0.0
+    headers: dict = field(default_factory=dict)
+    error: str = ""
+
+
+@dataclass
+class WhoisResult:
+    query: str
+    registrar: str = ""
+    created: str = ""
+    expires: str = ""
+    name_servers: list = field(default_factory=list)
+    raw: str = ""
+    error: str = ""
+
+
 class HostStats:
     def __init__(self):
         self.sent = 0

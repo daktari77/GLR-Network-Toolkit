@@ -17,14 +17,17 @@ def expand_range(notation: str) -> list[str]:
 
     if "/" in notation:
         net = ipaddress.ip_network(notation, strict=False)
+        # Check size BEFORE expanding — list(net.hosts()) on a /8 generates 16 M entries
+        # and blocks the main thread. num_addresses includes network + broadcast.
+        if net.num_addresses > MAX_HOSTS + 2:
+            usable = net.num_addresses - 2
+            raise ValueError(
+                f"Subnet contains {usable:,} hosts; max allowed is {MAX_HOSTS}. "
+                "Use a more specific prefix."
+            )
         hosts = list(net.hosts())
         if not hosts:  # /32 single host
             hosts = [net.network_address]
-        if len(hosts) > MAX_HOSTS:
-            raise ValueError(
-                f"Subnet contains {len(hosts):,} hosts; max allowed is {MAX_HOSTS}. "
-                "Use a more specific prefix."
-            )
         return [str(ip) for ip in hosts]
 
     if "-" in notation:

@@ -1,311 +1,111 @@
-import csv
-import queue
-from collections import deque
-from pathlib import Path
 from PyQt6.QtWidgets import (
-    QMainWindow, QFileDialog, QLabel, QSpinBox, QToolBar, QSplitter,
+    QMainWindow, QTabWidget, QWidget, QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
+    QApplication,
 )
-from PyQt6.QtGui import QAction
-from PyQt6.QtCore import QTimer, Qt
-from src.gui.host_table import HostTable, COLUMNS
-from src.gui.history_table import HistoryTable, MAX_ROWS
-from src.gui.settings_dlg import SettingsDialog
-from src.gui.add_host_dlg import AddHostDialog
-from src.gui.add_subnet_dlg import AddSubnetDialog
-from src.models import HostEntry, ProbeResult, ProbeType, HostStats
-from src.utils.ip_range import expand_range, is_range_notation
-from src.monitor import Monitor
-from src.alerting import Alerter, AlertConfig
+from PyQt6.QtCore import Qt
+from src.gui.panels.monitor_panel import MonitorPanel
+from src.gui.panels.scanner_panel import ScannerPanel
+from src.gui.panels.port_scanner_panel import PortScannerPanel
+from src.gui.panels.troubleshoot_panel import TroubleshootPanel
+from src.models import ProbeType, HostEntry
+from src.utils.privileges import is_admin, restart_as_admin
 import src.app_settings as app_settings
+import src.gui.theme as theme
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("GLR-ParallelPingInfo")
-        self.setMinimumSize(1100, 620)
+        self.setWindowTitle("GLR Network Toolkit")
+        self.setMinimumSize(1200, 700)
 
         self._settings = app_settings.load()
-        self._result_queue: queue.Queue[ProbeResult] = queue.Queue()
-        self._monitor: Monitor | None = None
-        self._alert_config = _cfg_from_settings(self._settings)
-        self._alerter = Alerter(self._alert_config)
-        self._entries: list[HostEntry] = []
-        self._stats: dict[str, HostStats] = {}
-        self._history: dict[str, deque[ProbeResult]] = {}
 
-        self._build_toolbar()
-        self._build_central()
+        # Apply saved theme before building any widgets
+        t = theme.THEMES.get(self._settings.theme, theme.DARK)
+        theme.apply(QApplication.instance(), t)
 
-        self._flush_timer = QTimer()
-        self._flush_timer.timeout.connect(self._flush_queue)
-        self._flush_timer.start(400)
+        root = QWidget()
+        root_layout = QVBoxLayout(root)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
 
-        self._interval.setValue(self._settings.interval)
-        if self._settings.last_hosts_file:
-            p = Path(self._settings.last_hosts_file)
-            if p.exists():
-                self._load_from_path(str(p))
+        if not is_admin():
+            self._admin_banner = self._build_admin_banner()
+            root_layout.addWidget(self._admin_banner)
 
-    # ------------------------------------------------------------------
-    def _build_toolbar(self):
-        tb: QToolBar = self.addToolBar("Main")
-        tb.setMovable(False)
+        self._tabs = QTabWidget()
+        self._tabs.setTabPosition(QTabWidget.TabPosition.North)
+        root_layout.addWidget(self._tabs)
+        self.setCentralWidget(root)
 
-        act_load = QAction("Load Hosts…", self)
-        act_load.triggered.connect(self._load_hosts)
-        tb.addAction(act_load)
+        self._monitor = MonitorPanel(self._settings)
+        self._scanner = ScannerPanel()
+        self._port_scanner = PortScannerPanel()
+        self._troubleshoot = TroubleshootPanel()
 
-        act_add = QAction("＋ Add", self)
-        act_add.triggered.connect(self._add_host)
-        tb.addAction(act_add)
+        self._tabs.addTab(self._monitor, "Monitor")
+        self._tabs.addTab(self._scanner, "Network Scanner")
+        self._tabs.addTab(self._port_scanner, "Port Scanner")
+        self._tabs.addTab(self._troubleshoot, "Troubleshoot")
 
-        act_add_range = QAction("＋ Add Range…", self)
-        act_add_range.triggered.connect(self._add_subnet)
-        tb.addAction(act_add_range)
+        self._monitor.status_changed.connect(self.statusBar().showMessage)
+        self._monitor.theme_changed.connect(self._on_theme_changed)
 
-        act_remove = QAction("－ Remove", self)
-        act_remove.triggered.connect(self._remove_host)
-        tb.addAction(act_remove)
+        # Cross-panel wiring: scanner → other tabs
+        self._scanner.send_to_monitor.connect(self._add_host_to_monitor)
+        self._scanner.send_to_port_scanner.connect(self._send_to_port_scanner)
+        self._scanner.send_to_traceroute.connect(self._troubleshoot.set_traceroute_target)
+        self._scanner.send_to_dns.connect(self._troubleshoot.set_dns_target)
 
-        tb.addSeparator()
+        # Cross-panel wiring: monitor → other tabs
+        self._monitor.send_to_port_scanner.connect(self._send_to_port_scanner)
+        self._monitor.send_to_traceroute.connect(self._troubleshoot.set_traceroute_target)
+        self._monitor.send_to_dns.connect(self._troubleshoot.set_dns_target)
 
-        self._act_start = QAction("▶  Start", self)
-        self._act_start.triggered.connect(self._start)
-        tb.addAction(self._act_start)
+        # Cross-panel wiring: port scanner → monitor
+        self._port_scanner.add_to_monitor.connect(self._add_tcp_to_monitor)
 
-        self._act_stop = QAction("■  Stop", self)
-        self._act_stop.triggered.connect(self._stop)
-        self._act_stop.setEnabled(False)
-        tb.addAction(self._act_stop)
-
-        tb.addSeparator()
-        tb.addWidget(QLabel("  Interval (s): "))
-        self._interval = QSpinBox()
-        self._interval.setRange(1, 300)
-        self._interval.setValue(5)
-        tb.addWidget(self._interval)
-
-        tb.addSeparator()
-
-        act_export = QAction("Export CSV…", self)
-        act_export.triggered.connect(self._export_csv)
-        tb.addAction(act_export)
-
-        act_settings = QAction("Settings…", self)
-        act_settings.triggered.connect(self._open_settings)
-        tb.addAction(act_settings)
-
-    def _build_central(self):
-        self._splitter = QSplitter(Qt.Orientation.Vertical)
-
-        self._table = HostTable()
-        self._table.itemSelectionChanged.connect(self._on_host_selected)
-        self._splitter.addWidget(self._table)
-
-        self._history_table = HistoryTable()
-        self._splitter.addWidget(self._history_table)
-
-        self._splitter.setStretchFactor(0, 3)
-        self._splitter.setStretchFactor(1, 2)
-
-        self.setCentralWidget(self._splitter)
-
-    # ------------------------------------------------------------------
-    def _on_host_selected(self):
-        rows = self._table.selectionModel().selectedRows()
-        if not rows:
-            return
-        host = self._table.item(rows[0].row(), 0).text()
-        history = list(self._history.get(host, []))
-        self._history_table.set_host(host, history)
-
-    # ------------------------------------------------------------------
-    def _load_hosts(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Open host list", "", "Text files (*.txt);;All files (*)"
+    def _build_admin_banner(self) -> QWidget:
+        banner = QWidget()
+        banner.setObjectName("admin_banner")
+        banner.setStyleSheet(
+            "QWidget#admin_banner { background:#856404; border-bottom:1px solid #6d5204; }"
         )
-        if path:
-            self._load_from_path(path)
-
-    def _load_from_path(self, path: str):
-        self._entries = _parse_hosts_file(path)
-        self._stats = {e.host: HostStats() for e in self._entries}
-        self._history = {e.host: deque(maxlen=MAX_ROWS) for e in self._entries}
-        self._table.set_entries(self._entries)
-        self._history_table.clear()
-        self._settings.last_hosts_file = path
-        self.statusBar().showMessage(f"Loaded {len(self._entries)} hosts from {path}")
-
-    def _add_host(self):
-        dlg = AddHostDialog(parent=self)
-        if not dlg.exec():
-            return
-        entry = dlg.get_entry()
-        self._entries.append(entry)
-        self._stats[entry.host] = HostStats()
-        self._history[entry.host] = deque(maxlen=MAX_ROWS)
-        self._table.add_entry(entry)
-        if self._monitor:
-            self._restart_monitor()
-
-    def _add_subnet(self):
-        dlg = AddSubnetDialog(parent=self)
-        if not dlg.exec():
-            return
-        new_entries = dlg.get_entries()
-        for entry in new_entries:
-            if entry.host not in self._stats:
-                self._entries.append(entry)
-                self._stats[entry.host] = HostStats()
-                self._history[entry.host] = deque(maxlen=MAX_ROWS)
-                self._table.add_entry(entry)
-        self.statusBar().showMessage(f"Added {len(new_entries)} host(s) from range.")
-        if self._monitor:
-            self._restart_monitor()
-
-    def _remove_host(self):
-        host = self._table.remove_selected()
-        if not host:
-            return
-        self._entries = [e for e in self._entries if e.host != host]
-        self._stats.pop(host, None)
-        self._history.pop(host, None)
-        self._history_table.clear()
-        if self._monitor:
-            self._restart_monitor()
-
-    def _start(self):
-        if not self._entries:
-            self.statusBar().showMessage("No hosts loaded — use 'Load Hosts…' or '＋ Add'")
-            return
-        self._monitor = Monitor(
-            entries=self._entries,
-            interval=self._interval.value(),
-            on_result=self._result_queue.put,
+        bl = QHBoxLayout(banner)
+        bl.setContentsMargins(8, 4, 8, 4)
+        lbl = QLabel("Some features require elevated privileges (ARP scan, MAC lookup).")
+        lbl.setStyleSheet("color:#fff8dc; background:transparent;")
+        bl.addWidget(lbl)
+        bl.addStretch()
+        btn = QPushButton("Restart as Administrator")
+        btn.setStyleSheet(
+            "background:#ffc107; color:#000; border:none; padding:4px 12px;"
+            "border-radius:4px; font-weight:bold;"
         )
-        self._monitor.start()
-        self._act_start.setEnabled(False)
-        self._act_stop.setEnabled(True)
-        self.statusBar().showMessage("Monitoring…")
+        btn.clicked.connect(restart_as_admin)
+        bl.addWidget(btn)
+        return banner
 
-    def _stop(self):
-        if self._monitor:
-            self._monitor.stop()
-            self._monitor = None
-        self._act_start.setEnabled(True)
-        self._act_stop.setEnabled(False)
-        self.statusBar().showMessage("Stopped")
+    def _on_theme_changed(self, theme_name: str):
+        t = theme.THEMES.get(theme_name, theme.DARK)
+        theme.apply(QApplication.instance(), t)
+        self._settings.theme = theme_name
+        self._monitor.refresh_theme()
 
-    def _restart_monitor(self):
-        if self._monitor:
-            self._monitor.stop()
-        self._monitor = Monitor(
-            entries=self._entries,
-            interval=self._interval.value(),
-            on_result=self._result_queue.put,
-        )
-        self._monitor.start()
+    def _add_host_to_monitor(self, ip: str):
+        self._monitor.add_host_from_scan(ip)
+        self._tabs.setCurrentWidget(self._monitor)
 
-    def _open_settings(self):
-        dlg = SettingsDialog(self._alert_config, parent=self)
-        if dlg.exec():
-            _sync_cfg_to_settings(self._alert_config, self._settings)
-            self._alerter = Alerter(self._alert_config)
+    def _send_to_port_scanner(self, ip: str):
+        self._port_scanner.set_target(ip)
+        self._tabs.setCurrentWidget(self._port_scanner)
 
-    def _export_csv(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export CSV", "pinginfo_export.csv", "CSV files (*.csv)"
-        )
-        if not path:
-            return
-        rows = self._table.get_all_rows()
-        with open(path, "w", newline="", encoding="utf-8") as f:
-            csv.writer(f).writerow(COLUMNS)
-            csv.writer(f).writerows(rows)
-        self.statusBar().showMessage(f"Exported {len(rows)} rows to {path}")
-
-    def _flush_queue(self):
-        while not self._result_queue.empty():
-            result: ProbeResult = self._result_queue.get_nowait()
-            stats = self._stats.setdefault(result.host, HostStats())
-            stats.update(result)
-            self._table.update_result(result, stats)
-            self._alerter.check(result)
-            self._history.setdefault(result.host, deque(maxlen=MAX_ROWS)).append(result)
-            self._history_table.append_if_selected(result)
+    def _add_tcp_to_monitor(self, host: str, port: int):
+        self._monitor.add_host_tcp(host, port)
+        self._tabs.setCurrentWidget(self._monitor)
 
     def closeEvent(self, event):
-        self._stop()
-        self._settings.interval = self._interval.value()
+        self._monitor.save_settings()
         app_settings.save(self._settings)
         event.accept()
-
-
-# ------------------------------------------------------------------
-def _parse_hosts_file(path: str) -> list[HostEntry]:
-    entries: list[HostEntry] = []
-    seen: set[str] = set()
-
-    def _add(entry: HostEntry):
-        if entry.host not in seen:
-            seen.add(entry.host)
-            entries.append(entry)
-
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split()
-            token = parts[0]
-            probe_type = ProbeType.ICMP
-            port: int | None = None
-            if len(parts) >= 2:
-                t = parts[1].upper()
-                if t == "TCP":
-                    probe_type = ProbeType.TCP
-                    port = int(parts[2]) if len(parts) >= 3 else 80
-                elif t == "HTTP":
-                    probe_type = ProbeType.HTTP
-                    port = int(parts[2]) if len(parts) >= 3 else None
-                elif t == "HTTPS":
-                    probe_type = ProbeType.HTTP
-                    port = int(parts[2]) if len(parts) >= 3 else None
-                    if not token.startswith("https://"):
-                        token = f"https://{token}"
-
-            if is_range_notation(token):
-                try:
-                    for ip in expand_range(token):
-                        _add(HostEntry(host=ip, probe_type=probe_type, port=port))
-                except ValueError:
-                    pass  # skip invalid range lines silently
-            else:
-                _add(HostEntry(host=token, probe_type=probe_type, port=port))
-
-    return entries
-
-
-def _cfg_from_settings(s: app_settings.AppSettings) -> AlertConfig:
-    cfg = AlertConfig()
-    cfg.log_file = s.alert_log_file or None
-    cfg.webhook_url = s.alert_webhook_url
-    cfg.smtp_host = s.smtp_host
-    cfg.smtp_port = s.smtp_port
-    cfg.smtp_user = s.smtp_user
-    cfg.smtp_password = s.smtp_password
-    cfg.smtp_from = s.smtp_from
-    cfg.smtp_to = list(s.smtp_to)
-    return cfg
-
-
-def _sync_cfg_to_settings(cfg: AlertConfig, s: app_settings.AppSettings):
-    s.alert_log_file = cfg.log_file or ""
-    s.alert_webhook_url = cfg.webhook_url
-    s.smtp_host = cfg.smtp_host
-    s.smtp_port = cfg.smtp_port
-    s.smtp_user = cfg.smtp_user
-    s.smtp_password = cfg.smtp_password
-    s.smtp_from = cfg.smtp_from
-    s.smtp_to = list(cfg.smtp_to)

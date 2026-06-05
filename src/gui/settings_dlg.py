@@ -1,20 +1,29 @@
 from PyQt6.QtWidgets import (
-    QDialog, QFormLayout, QLineEdit, QSpinBox,
+    QDialog, QFormLayout, QLineEdit, QSpinBox, QComboBox,
     QDialogButtonBox, QGroupBox, QVBoxLayout,
 )
 from src.alerting import AlertConfig
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, config: AlertConfig, parent=None):
+    def __init__(self, config: AlertConfig, current_theme: str = "dark", parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setMinimumWidth(420)
         self.config = config
-        self._build_ui()
+        self._initial_theme = current_theme
+        self._build_ui(current_theme)
 
-    def _build_ui(self):
+    def _build_ui(self, current_theme: str):
         layout = QVBoxLayout(self)
+
+        appear_box = QGroupBox("Appearance")
+        appear_form = QFormLayout(appear_box)
+        self._theme_cb = QComboBox()
+        self._theme_cb.addItems(["Dark", "Light"])
+        self._theme_cb.setCurrentText(current_theme.capitalize())
+        appear_form.addRow("Theme:", self._theme_cb)
+        layout.addWidget(appear_box)
 
         alert_box = QGroupBox("Alerts")
         alert_form = QFormLayout(alert_box)
@@ -60,3 +69,11 @@ class SettingsDialog(QDialog):
         self.config.smtp_from = self._smtp_from.text()
         self.config.smtp_to = [s.strip() for s in self._smtp_to.text().split(",") if s.strip()]
         self.accept()
+
+    @property
+    def chosen_theme(self) -> str:
+        return self._theme_cb.currentText().lower()
+
+    @property
+    def theme_changed(self) -> bool:
+        return self.chosen_theme != self._initial_theme
