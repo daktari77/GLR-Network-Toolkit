@@ -13,14 +13,16 @@ class Theme:
     text_muted: str
     sel_bg: str
     sel_fg: str
-    # Status badge (opaque pill — same palette works on both bg colours)
+    accent: str
+    card_bg: str
+    # Status badge (opaque pill)
     up_bg: str
     up_fg: str
     down_bg: str
     down_fg: str
     unknown_bg: str
     unknown_fg: str
-    # History table status foreground (text on table bg)
+    # History table status foreground
     hist_up_fg: str
     hist_down_fg: str
     hist_unknown_fg: str
@@ -37,52 +39,56 @@ class Theme:
 
 DARK = Theme(
     name="dark",
-    bg="#1e1e2e",
-    surface="#2a2a3e",
-    surface_alt="#252535",
-    border="#3e3e54",
-    text="#cccccc",
-    text_muted="#888888",
-    sel_bg="#3d3d5c",
+    bg="#0d1117",
+    surface="#161b22",
+    surface_alt="#1c2128",
+    border="#30363d",
+    text="#e6edf3",
+    text_muted="#7d8590",
+    sel_bg="#388bfd",
     sel_fg="#ffffff",
-    up_bg="#2d9e4e",   up_fg="#ffffff",
-    down_bg="#c0392b", down_fg="#ffffff",
-    unknown_bg="#4a4a5a", unknown_fg="#aaaaaa",
-    hist_up_fg="#50d890",
-    hist_down_fg="#ff6b6b",
-    hist_unknown_fg="#777777",
-    chart_bg="#1e1e2e",
-    chart_grid="#2e2e3e",
-    chart_line="#50d890",
-    chart_dot="#ff6b6b",
-    chart_axis="#aaaaaa",
-    chart_title="#cccccc",
-    empty_fg="#555566",
+    accent="#388bfd",
+    card_bg="#1c2128",
+    up_bg="#238636",    up_fg="#ffffff",
+    down_bg="#da3633",  down_fg="#ffffff",
+    unknown_bg="#30363d", unknown_fg="#8b949e",
+    hist_up_fg="#3fb950",
+    hist_down_fg="#f85149",
+    hist_unknown_fg="#6e7681",
+    chart_bg="#0d1117",
+    chart_grid="#21262d",
+    chart_line="#3fb950",
+    chart_dot="#f85149",
+    chart_axis="#7d8590",
+    chart_title="#c9d1d9",
+    empty_fg="#30363d",
 )
 
 LIGHT = Theme(
     name="light",
     bg="#ffffff",
-    surface="#f2f2f2",
-    surface_alt="#f9f9f9",
-    border="#d4d4d4",
-    text="#1a1a1a",
-    text_muted="#666666",
-    sel_bg="#0078d4",
+    surface="#f6f8fa",
+    surface_alt="#f0f2f5",
+    border="#d0d7de",
+    text="#1f2328",
+    text_muted="#656d76",
+    sel_bg="#0969da",
     sel_fg="#ffffff",
-    up_bg="#2d9e4e",   up_fg="#ffffff",
-    down_bg="#c0392b", down_fg="#ffffff",
-    unknown_bg="#6c757d", unknown_fg="#ffffff",
-    hist_up_fg="#1a7a2e",
-    hist_down_fg="#a01515",
-    hist_unknown_fg="#666666",
-    chart_bg="#f5f5f5",
-    chart_grid="#e0e0e0",
-    chart_line="#1a7a2e",
-    chart_dot="#c0392b",
-    chart_axis="#555555",
-    chart_title="#333333",
-    empty_fg="#aaaaaa",
+    accent="#0969da",
+    card_bg="#f6f8fa",
+    up_bg="#1a7f37",    up_fg="#ffffff",
+    down_bg="#cf222e",  down_fg="#ffffff",
+    unknown_bg="#6e7781", unknown_fg="#ffffff",
+    hist_up_fg="#1a7f37",
+    hist_down_fg="#cf222e",
+    hist_unknown_fg="#6e7781",
+    chart_bg="#f6f8fa",
+    chart_grid="#e1e4e8",
+    chart_line="#1a7f37",
+    chart_dot="#cf222e",
+    chart_axis="#656d76",
+    chart_title="#1f2328",
+    empty_fg="#c9cdd2",
 )
 
 THEMES: dict[str, Theme] = {"dark": DARK, "light": LIGHT}
@@ -101,31 +107,35 @@ def apply(app: QApplication, t: Theme) -> None:
 
 def _build_qss(t: Theme) -> str:
     return f"""
+/* ── Base ──────────────────────────────────────────────── */
 QWidget {{
     background-color: {t.bg};
     color: {t.text};
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 10pt;
 }}
 QMainWindow, QDialog {{
     background-color: {t.bg};
 }}
 
-/* ── Toolbar ─────────────────────────────────────────── */
+/* ── Toolbar ─────────────────────────────────────────────── */
 QToolBar {{
     background-color: {t.surface};
     border: none;
     border-bottom: 1px solid {t.border};
-    padding: 2px 4px;
+    padding: 4px 8px;
     spacing: 2px;
 }}
 QToolBar QToolButton {{
     background-color: transparent;
     color: {t.text};
     border: none;
-    border-radius: 3px;
-    padding: 3px 7px;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 10pt;
 }}
 QToolBar QToolButton:hover {{
-    background-color: {t.border};
+    background-color: {t.surface_alt};
 }}
 QToolBar QToolButton:pressed {{
     background-color: {t.sel_bg};
@@ -137,34 +147,36 @@ QToolBar QToolButton:disabled {{
 QToolBar::separator {{
     background-color: {t.border};
     width: 1px;
-    margin: 3px 4px;
+    margin: 4px 6px;
 }}
 
-/* ── Tabs ─────────────────────────────────────────────── */
+/* ── Tabs ─────────────────────────────────────────────────── */
 QTabWidget::pane {{
     border: none;
     background-color: {t.bg};
 }}
 QTabBar {{
     background-color: {t.surface};
+    border-bottom: 1px solid {t.border};
 }}
 QTabBar::tab {{
-    background-color: {t.surface};
+    background-color: transparent;
     color: {t.text_muted};
-    padding: 6px 16px;
-    border-right: 1px solid {t.border};
+    padding: 8px 20px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
 }}
 QTabBar::tab:selected {{
-    background-color: {t.bg};
     color: {t.text};
-    border-bottom: 2px solid {t.sel_bg};
+    border-bottom: 2px solid {t.accent};
 }}
 QTabBar::tab:hover:!selected {{
     color: {t.text};
     background-color: {t.surface_alt};
 }}
 
-/* ── Tables ───────────────────────────────────────────── */
+/* ── Tables ───────────────────────────────────────────────── */
 QTableWidget {{
     background-color: {t.bg};
     alternate-background-color: {t.surface_alt};
@@ -173,6 +185,14 @@ QTableWidget {{
     border: none;
     selection-background-color: {t.sel_bg};
     selection-color: {t.sel_fg};
+    outline: none;
+}}
+QTableWidget::item {{
+    padding: 4px 6px;
+    border: none;
+}}
+QTableWidget::item:hover {{
+    background-color: {t.surface_alt};
 }}
 QTableWidget::item:selected {{
     background-color: {t.sel_bg};
@@ -180,6 +200,7 @@ QTableWidget::item:selected {{
 }}
 QHeaderView {{
     background-color: {t.surface};
+    border: none;
 }}
 QHeaderView::section {{
     background-color: {t.surface};
@@ -187,148 +208,160 @@ QHeaderView::section {{
     border: none;
     border-right: 1px solid {t.border};
     border-bottom: 1px solid {t.border};
-    padding: 4px 6px;
+    padding: 5px 8px;
+    font-size: 9pt;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
 }}
 QHeaderView::section:last {{
     border-right: none;
 }}
 
-/* ── Splitter ─────────────────────────────────────────── */
+/* ── Splitter ─────────────────────────────────────────────── */
 QSplitter::handle {{
     background-color: {t.border};
 }}
-QSplitter::handle:vertical {{
-    height: 1px;
-}}
-QSplitter::handle:horizontal {{
-    width: 1px;
-}}
+QSplitter::handle:vertical {{ height: 1px; }}
+QSplitter::handle:horizontal {{ width: 1px; }}
 
-/* ── Status bar ───────────────────────────────────────── */
+/* ── Status bar ───────────────────────────────────────────── */
 QStatusBar {{
     background-color: {t.surface};
     color: {t.text_muted};
     border-top: 1px solid {t.border};
+    font-size: 9pt;
 }}
 
-/* ── Form controls ────────────────────────────────────── */
+/* ── Form controls ────────────────────────────────────────── */
 QLineEdit {{
     background-color: {t.surface};
     color: {t.text};
     border: 1px solid {t.border};
-    border-radius: 3px;
-    padding: 4px 6px;
+    border-radius: 6px;
+    padding: 5px 8px;
     selection-background-color: {t.sel_bg};
     selection-color: {t.sel_fg};
 }}
 QLineEdit:focus {{
-    border-color: {t.sel_bg};
+    border-color: {t.accent};
 }}
-QLineEdit:disabled {{
-    color: {t.text_muted};
-}}
+QLineEdit:disabled {{ color: {t.text_muted}; }}
+
 QSpinBox {{
     background-color: {t.surface};
     color: {t.text};
     border: 1px solid {t.border};
-    border-radius: 3px;
-    padding: 3px 6px;
+    border-radius: 6px;
+    padding: 4px 6px;
 }}
 QSpinBox::up-button, QSpinBox::down-button {{
     background-color: {t.surface};
     border: none;
     width: 16px;
+    border-radius: 3px;
 }}
 QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
     background-color: {t.border};
 }}
+
 QComboBox {{
     background-color: {t.surface};
     color: {t.text};
     border: 1px solid {t.border};
-    border-radius: 3px;
-    padding: 4px 6px;
+    border-radius: 6px;
+    padding: 5px 8px;
     min-width: 60px;
 }}
-QComboBox:focus {{
-    border-color: {t.sel_bg};
-}}
-QComboBox::drop-down {{
-    border: none;
-    width: 20px;
-}}
+QComboBox:focus {{ border-color: {t.accent}; }}
+QComboBox::drop-down {{ border: none; width: 20px; }}
 QComboBox QAbstractItemView {{
     background-color: {t.surface};
     color: {t.text};
     selection-background-color: {t.sel_bg};
     selection-color: {t.sel_fg};
     border: 1px solid {t.border};
+    border-radius: 6px;
     outline: none;
 }}
 
-/* ── Buttons ──────────────────────────────────────────── */
+/* ── Buttons ──────────────────────────────────────────────── */
 QPushButton {{
     background-color: {t.surface};
     color: {t.text};
     border: 1px solid {t.border};
-    border-radius: 3px;
-    padding: 4px 14px;
+    border-radius: 6px;
+    padding: 5px 14px;
     min-width: 60px;
 }}
 QPushButton:hover {{
-    background-color: {t.border};
+    background-color: {t.surface_alt};
+    border-color: {t.accent};
 }}
 QPushButton:pressed {{
     background-color: {t.sel_bg};
     color: {t.sel_fg};
+    border-color: {t.sel_bg};
 }}
 QPushButton:default {{
-    border: 1px solid {t.sel_bg};
+    background-color: {t.accent};
+    color: #ffffff;
+    border-color: {t.accent};
+}}
+QPushButton:default:hover {{
+    background-color: {t.sel_bg};
 }}
 QPushButton:disabled {{
     color: {t.text_muted};
     border-color: {t.border};
 }}
 
-/* ── Scrollbars ───────────────────────────────────────── */
+/* ── Scrollbars ───────────────────────────────────────────── */
 QScrollBar:vertical {{
-    background: {t.surface};
-    width: 8px;
+    background: transparent;
+    width: 6px;
     border: none;
+    margin: 0;
 }}
 QScrollBar::handle:vertical {{
     background: {t.border};
-    border-radius: 4px;
+    border-radius: 3px;
     min-height: 24px;
 }}
+QScrollBar::handle:vertical:hover {{ background: {t.text_muted}; }}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 QScrollBar:horizontal {{
-    background: {t.surface};
-    height: 8px;
+    background: transparent;
+    height: 6px;
     border: none;
+    margin: 0;
 }}
 QScrollBar::handle:horizontal {{
     background: {t.border};
-    border-radius: 4px;
+    border-radius: 3px;
     min-width: 24px;
 }}
+QScrollBar::handle:horizontal:hover {{ background: {t.text_muted}; }}
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{ width: 0; }}
 
-/* ── Dialog chrome ────────────────────────────────────── */
+/* ── Dialog chrome ────────────────────────────────────────── */
 QGroupBox {{
     color: {t.text_muted};
     border: 1px solid {t.border};
-    border-radius: 4px;
-    margin-top: 10px;
-    padding-top: 6px;
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 8px;
 }}
 QGroupBox::title {{
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    padding: 0 6px;
-    left: 8px;
+    padding: 0 8px;
+    left: 10px;
     color: {t.text_muted};
+    font-size: 9pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
 }}
 QCheckBox {{
     color: {t.text};
@@ -338,12 +371,12 @@ QCheckBox::indicator {{
     width: 14px;
     height: 14px;
     border: 1px solid {t.border};
-    border-radius: 2px;
+    border-radius: 3px;
     background-color: {t.surface};
 }}
 QCheckBox::indicator:checked {{
-    background-color: {t.sel_bg};
-    border-color: {t.sel_bg};
+    background-color: {t.accent};
+    border-color: {t.accent};
 }}
 QLabel {{
     background-color: transparent;
@@ -352,18 +385,31 @@ QLabel {{
 QMenuBar {{
     background-color: {t.surface};
     color: {t.text};
+    border-bottom: 1px solid {t.border};
 }}
 QMenuBar::item:selected {{
     background-color: {t.sel_bg};
     color: {t.sel_fg};
+    border-radius: 4px;
 }}
 QMenu {{
     background-color: {t.surface};
     color: {t.text};
     border: 1px solid {t.border};
+    border-radius: 6px;
+    padding: 4px;
+}}
+QMenu::item {{
+    padding: 5px 20px;
+    border-radius: 4px;
 }}
 QMenu::item:selected {{
     background-color: {t.sel_bg};
     color: {t.sel_fg};
+}}
+QMenu::separator {{
+    height: 1px;
+    background: {t.border};
+    margin: 4px 0;
 }}
 """

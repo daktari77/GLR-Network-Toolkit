@@ -10,10 +10,11 @@ from PyQt6.QtCore import QTimer, Qt, pyqtSignal
 from src.gui.host_table import HostTable, COLUMNS
 from src.gui.history_table import HistoryTable, MAX_ROWS
 from src.gui.widgets.latency_chart import LatencyChart
+from src.gui.widgets.status_summary import StatusSummary
 from src.gui.settings_dlg import SettingsDialog
 from src.gui.add_host_dlg import AddHostDialog
 from src.gui.add_subnet_dlg import AddSubnetDialog
-from src.models import HostEntry, ProbeResult, ProbeType, HostStats
+from src.models import HostEntry, ProbeResult, ProbeType, HostStats, HostStatus
 from src.utils.ip_range import expand_range, is_range_notation
 from src.monitor import Monitor
 from src.alerting import Alerter, AlertConfig
@@ -37,6 +38,7 @@ class MonitorPanel(QWidget):
         self._entries: list[HostEntry] = []
         self._stats: dict[str, HostStats] = {}
         self._history: dict[str, deque[ProbeResult]] = {}
+        self._host_status: dict[str, HostStatus] = {}
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -105,6 +107,9 @@ class MonitorPanel(QWidget):
         layout.addWidget(tb)
 
     def _build_central(self, layout: QVBoxLayout):
+        self._summary = StatusSummary()
+        layout.addWidget(self._summary)
+
         self._splitter = QSplitter(Qt.Orientation.Vertical)
 
         self._table = HostTable()
@@ -148,9 +153,11 @@ class MonitorPanel(QWidget):
         self._entries = _parse_hosts_file(path)
         self._stats = {e.host: HostStats() for e in self._entries}
         self._history = {e.host: deque(maxlen=MAX_ROWS) for e in self._entries}
+        self._host_status = {}
         self._table.set_entries(self._entries)
         self._history_table.clear()
         self._settings.last_hosts_file = path
+        self._update_summary()
         self.status_changed.emit(f"Loaded {len(self._entries)} hosts from {path}")
 
     def _add_host(self):
@@ -162,6 +169,7 @@ class MonitorPanel(QWidget):
         self._stats[entry.host] = HostStats()
         self._history[entry.host] = deque(maxlen=MAX_ROWS)
         self._table.add_entry(entry)
+        self._update_summary()
         if self._monitor:
             self._restart_monitor()
 
@@ -187,7 +195,9 @@ class MonitorPanel(QWidget):
         self._entries = [e for e in self._entries if e.host != host]
         self._stats.pop(host, None)
         self._history.pop(host, None)
+        self._host_status.pop(host, None)
         self._history_table.clear()
+        self._update_summary()
         if self._monitor:
             self._restart_monitor()
 
@@ -244,17 +254,32 @@ class MonitorPanel(QWidget):
         self.status_changed.emit(f"Exported {len(rows)} rows to {path}")
 
     def _flush_queue(self):
+        changed = False
         while not self._result_queue.empty():
             result: ProbeResult = self._result_queue.get_nowait()
             stats = self._stats.setdefault(result.host, HostStats())
             stats.update(result)
+            self._host_status[result.host] = result.status
             self._table.update_result(result, stats)
             self._alerter.check(result)
             self._history.setdefault(result.host, deque(maxlen=MAX_ROWS)).append(result)
             self._history_table.append_if_selected(result)
             self._latency_chart.append_point(result)
+            changed = True
+        if changed:
+            self._update_summary()
+
+    def _update_summary(self):
+        total = len(self._entries)
+        up = sum(1 for s in self._host_status.values() if s == HostStatus.UP)
+        down = sum(1 for s in self._host_status.values() if s == HostStatus.DOWN)
+        unknown = total - up - down
+        latencies = [s.avg_ms for s in self._stats.values() if s.avg_ms is not None]
+        avg_ms = f"{sum(latencies) / len(latencies):.1f} ms" if latencies else "—"
+        self._summary.update_stats(total, up, down, unknown, avg_ms)
 
     def refresh_theme(self):
+        self._summary.refresh_theme()
         self._table.refresh_theme()
         self._history_table.refresh_theme()
         self._latency_chart.update()
