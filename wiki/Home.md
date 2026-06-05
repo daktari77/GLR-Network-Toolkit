@@ -21,7 +21,7 @@ Parallel ICMP / TCP / HTTP probing, subnet discovery, port scanning, and 5 troub
 **Requirements:** Windows 10/11 · Python 3.10+
 
 ```bash
-git clone https://github.com/daktari77/-GLR-NetScope
+git clone https://github.com/daktari77/GLR-NetScope
 cd GLR-Network-Toolkit
 pip install -r requirements.txt
 python main.py
