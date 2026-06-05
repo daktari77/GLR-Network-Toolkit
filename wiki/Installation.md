@@ -14,7 +14,7 @@
 ## From source (recommended for development)
 
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/GLR-ParallelPingInfo
+git clone https://github.com/daktari77/GLR-Network-Toolkit
 cd GLR-ParallelPingInfo
 pip install -r requirements.txt
 python main.py
