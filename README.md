@@ -1,4 +1,4 @@
-# GLR Network Toolkit
+# GLR NetScope
 
 Desktop network monitor for Windows. Parallel ICMP/TCP/HTTP probes, live status table, latency charts, subnet scanner, port scanner, and troubleshooting tools — all in one PyQt6 app.
 
@@ -112,10 +112,10 @@ python -c "from src.gui.main_window import MainWindow; print('OK')"
 **Build a standalone executable:**
 ```bash
 pip install pyinstaller
-pyinstaller GLR-Network-Toolkit.spec
+pyinstaller GLR-NetScope.spec
 ```
 
-Output lands in `dist/GLR-Network-Toolkit/`.
+Output lands in `dist/GLR-NetScope/`.
 
 ---
 

@@ -14,8 +14,8 @@
 ## From source (recommended for development)
 
 ```bash
-git clone https://github.com/daktari77/GLR-Network-Toolkit
-cd GLR-ParallelPingInfo
+git clone https://github.com/daktari77/GLR-NetScope
+cd GLR-Network-Toolkit
 pip install -r requirements.txt
 python main.py
 ```
@@ -46,12 +46,12 @@ Build a self-contained `.exe` that requires no Python installation:
 
 ```bash
 pip install pyinstaller
-pyinstaller GLR-Network-Toolkit.spec
+pyinstaller GLR-NetScope.spec
 ```
 
-Output: `dist/GLR-Network-Toolkit/GLR-Network-Toolkit.exe`
+Output: `dist/GLR-NetScope/GLR-NetScope.exe`
 
-The folder `dist/GLR-Network-Toolkit/` is the portable distribution — copy it anywhere and run the `.exe` directly.
+The folder `dist/GLR-NetScope/` is the portable distribution — copy it anywhere and run the `.exe` directly.
 
 ### What the spec bundles
 
@@ -66,7 +66,7 @@ The folder `dist/GLR-Network-Toolkit/` is the portable distribution — copy it 
 ### Rebuild after changes
 
 ```bash
-pyinstaller --clean GLR-Network-Toolkit.spec
+pyinstaller --clean GLR-NetScope.spec
 ```
 
 ---

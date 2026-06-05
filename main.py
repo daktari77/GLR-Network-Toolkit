@@ -5,7 +5,7 @@ from src.gui.main_window import MainWindow
 
 def main():
     app = QApplication(sys.argv)
-    app.setApplicationName("GLR-ParallelPingInfo")
+    app.setApplicationName("GLR NetScope")
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

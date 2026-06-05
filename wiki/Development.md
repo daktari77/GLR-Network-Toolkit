@@ -4,7 +4,7 @@
 
 ```bash
 git clone https://github.com/daktari77/GLR-Network-Toolkit
-cd GLR-ParallelPingInfo
+cd GLR-Network-Toolkit
 pip install -r requirements.txt
 python main.py
 ```
@@ -203,17 +203,17 @@ self._table.resolve_dns.connect(self._send_to_dns)
 
 ```bash
 pip install pyinstaller
-pyinstaller GLR-Network-Toolkit.spec
+pyinstaller GLR-NetScope.spec
 ```
 
-Output: `dist/GLR-Network-Toolkit/GLR-Network-Toolkit.exe` (one-folder bundle, no console window).
+Output: `dist/GLR-NetScope/GLR-NetScope.exe` (one-folder bundle, no console window).
 
 The spec bundles `config/` and `docs/`. Optional packages are excluded — install them alongside the `.exe` if needed.
 
 To rebuild after changing the spec:
 
 ```bash
-pyinstaller --clean GLR-Network-Toolkit.spec
+pyinstaller --clean GLR-NetScope.spec
 ```
 
 ---

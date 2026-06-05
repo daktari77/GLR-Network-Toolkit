@@ -1,4 +1,4 @@
-# GLR Network Toolkit
+# GLR NetScope
 
 **Desktop network monitor and diagnostic suite for Windows.**
 Parallel ICMP / TCP / HTTP probing, subnet discovery, port scanning, and 5 troubleshooting tools — all in one PyQt6 app.
@@ -22,7 +22,7 @@ Parallel ICMP / TCP / HTTP probing, subnet discovery, port scanning, and 5 troub
 
 ```bash
 git clone https://github.com/daktari77/GLR-Network-Toolkit
-cd GLR-ParallelPingInfo
+cd GLR-Network-Toolkit
 pip install -r requirements.txt
 python main.py
 ```
@@ -87,8 +87,8 @@ Three independent alert channels, all triggered on UP↔DOWN transitions only (n
 
 ```bash
 pip install pyinstaller
-pyinstaller GLR-Network-Toolkit.spec
-# output: dist/GLR-Network-Toolkit/GLR-Network-Toolkit.exe
+pyinstaller GLR-NetScope.spec
+# output: dist/GLR-NetScope/GLR-NetScope.exe
 ```
 
 The bundled build includes `config/` and `docs/`. Optional packages (`scapy`, `dnspython`, `python-whois`) are excluded from the bundle — install separately if needed.

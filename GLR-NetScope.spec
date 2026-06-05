@@ -57,7 +57,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='GLR-Network-Toolkit',
+    name='GLR-NetScope',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -79,5 +79,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='GLR-Network-Toolkit',
+    name='GLR-NetScope',
 )

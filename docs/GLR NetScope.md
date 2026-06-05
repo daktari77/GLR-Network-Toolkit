@@ -1,4 +1,4 @@
-# GLR Network Toolkit
+# GLR NetScope
 
 > [!abstract] Panoramica
 > Tool desktop **PyQt6** per il monitoraggio e il troubleshooting di reti. Ispirato a NirSoft PingInfoView, esteso con scanner di rete, port scanner e strumenti diagnostici avanzati.

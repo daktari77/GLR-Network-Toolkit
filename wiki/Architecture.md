@@ -3,10 +3,10 @@
 ## File structure
 
 ```
-GLR-ParallelPingInfo/
+GLR-Network-Toolkit/
 ├── main.py                         # QApplication entry point
 ├── requirements.txt                # PyQt6 + requests (core)
-├── GLR-Network-Toolkit.spec        # PyInstaller build spec
+├── GLR-NetScope.spec        # PyInstaller build spec
 │
 ├── config/
 │   ├── hosts.txt                   # Host list (loaded at startup)

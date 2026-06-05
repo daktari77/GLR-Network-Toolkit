@@ -16,7 +16,7 @@ import src.gui.theme as theme
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("GLR Network Toolkit")
+        self.setWindowTitle("GLR NetScope")
         self.setMinimumSize(1200, 700)
 
         self._settings = app_settings.load()

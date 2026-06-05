@@ -10,7 +10,7 @@ Solo engineer / home-lab owner who built this tool for personal use. Technically
 
 ## Product Purpose
 
-GLR Network Toolkit is a personal parallel network monitor for Windows. It probes multiple hosts simultaneously via ICMP, TCP, and HTTP, surfaces per-host latency stats and status history, and fires alerts on state changes. The primary surface is the PyQt6 desktop app (Monitor, Network Scanner, Port Scanner, Troubleshoot tabs). Success looks like: open the app, see at a glance which hosts are UP or DOWN, drill into one host when something looks off, and trust the numbers.
+GLR NetScope is a personal parallel network monitor for Windows. It probes multiple hosts simultaneously via ICMP, TCP, and HTTP, surfaces per-host latency stats and status history, and fires alerts on state changes. The primary surface is the PyQt6 desktop app (Monitor, Network Scanner, Port Scanner, Troubleshoot tabs). Success looks like: open the app, see at a glance which hosts are UP or DOWN, drill into one host when something looks off, and trust the numbers.
 
 ## Brand Personality
 

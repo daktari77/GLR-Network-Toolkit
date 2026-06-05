@@ -3,7 +3,7 @@ tags: [indice, toolkit, rete]
 aliases: [Home, Index]
 ---
 
-# GLR Network Toolkit — Documentazione
+# GLR NetScope — Documentazione
 
 Toolkit desktop per il monitoraggio e la diagnostica di rete su Windows. Basato su PyQt6, ispirato a NirSoft PingInfoView, esteso con scanner, port scanner e strumenti di troubleshoot.
 
@@ -63,6 +63,6 @@ Opzionali:
 
 ```bash
 pip install pyinstaller
-pyinstaller GLR-Network-Toolkit.spec
-# output: dist/GLR-Network-Toolkit/GLR-Network-Toolkit.exe
+pyinstaller GLR-NetScope.spec
+# output: dist/GLR-NetScope/GLR-NetScope.exe
 ```

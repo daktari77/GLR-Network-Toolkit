@@ -1,4 +1,4 @@
-# GLR-ParallelPingInfo - host list
+# GLR NetScope - host list
 # Format:
 #   <hostname_or_ip>                    -> ICMP ping
 #   <hostname_or_ip> TCP <port>         -> TCP port check

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Purpose
 
-**GLR-ParallelPingInfo** is a Python/PyQt6 desktop tool inspired by NirSoft PingInfoView. It monitors multiple network hosts in parallel via ICMP ping, TCP port checks, and HTTP/HTTPS health checks. It displays live results with per-host statistics in a color-coded table and fires alerts (log file, email, webhook) on status changes.
+**GLR NetScope** is a Python/PyQt6 desktop tool inspired by NirSoft PingInfoView. It monitors multiple network hosts in parallel via ICMP ping, TCP port checks, and HTTP/HTTPS health checks. It displays live results with per-host statistics in a color-coded table and fires alerts (log file, email, webhook) on status changes.
 
 ## Development Commands
 
