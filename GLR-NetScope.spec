@@ -9,6 +9,7 @@ a = Analysis(
     datas=[
         ('config', 'config'),
         ('docs',   'docs'),
+        ('Icon',   'Icon'),
     ],
     hiddenimports=[
         # engines
@@ -69,6 +70,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     version=None,
+    icon='Icon/app.ico',
 )
 
 coll = COLLECT(

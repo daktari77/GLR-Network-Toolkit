@@ -184,6 +184,7 @@ class MonitorPanel(QWidget):
                 self._stats[entry.host] = HostStats()
                 self._history[entry.host] = deque(maxlen=MAX_ROWS)
                 self._table.add_entry(entry)
+        self._update_summary()
         self.status_changed.emit(f"Added {len(new_entries)} host(s) from range.")
         if self._monitor:
             self._restart_monitor()
@@ -296,6 +297,7 @@ class MonitorPanel(QWidget):
             self._stats[ip] = HostStats()
             self._history[ip] = deque(maxlen=MAX_ROWS)
             self._table.add_entry(entry)
+            self._update_summary()
             if self._monitor:
                 self._restart_monitor()
             self.status_changed.emit(f"Added {ip} to monitor.")
@@ -308,6 +310,7 @@ class MonitorPanel(QWidget):
             self._stats[ip] = HostStats()
             self._history[ip] = deque(maxlen=MAX_ROWS)
             self._table.add_entry(entry)
+            self._update_summary()
             if self._monitor:
                 self._restart_monitor()
             self.status_changed.emit(f"Added {ip}:{port} (TCP) to monitor.")

@@ -3,6 +3,8 @@ from PyQt6.QtWidgets import (
     QApplication,
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
+import sys, os
 from src.gui.panels.monitor_panel import MonitorPanel
 from src.gui.panels.scanner_panel import ScannerPanel
 from src.gui.panels.port_scanner_panel import PortScannerPanel
@@ -18,6 +20,14 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("GLR NetScope")
         self.setMinimumSize(1200, 700)
+
+        base = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(base, '..', '..', 'Icon', 'app.ico')
+        if not os.path.exists(icon_path):
+            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     '..', '..', 'Icon', 'app.ico')
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
 
         self._settings = app_settings.load()
 
